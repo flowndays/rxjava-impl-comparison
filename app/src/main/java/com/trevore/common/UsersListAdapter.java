@@ -4,7 +4,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import com.trevore.simplerxjavaandretrofit.R;
+import com.trevore.trevor.R;
 
 import java.util.ArrayList;
 import java.util.List;

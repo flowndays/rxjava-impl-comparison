@@ -1,4 +1,4 @@
-package com.trevore.anotherfromrodrigo.rx;
+package com.trevore.rodrigo.rx;
 
 /**
  * Created by rtang on 05/08/15.

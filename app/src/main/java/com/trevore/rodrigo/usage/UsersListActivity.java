@@ -1,4 +1,4 @@
-package com.trevore.anotherfromrodrigo.usage;
+package com.trevore.rodrigo.usage;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,12 +11,12 @@ import android.widget.TextView;
 
 import com.facebook.stetho.okhttp.StethoInterceptor;
 import com.squareup.okhttp.OkHttpClient;
-import com.trevore.anotherfromrodrigo.rx.RxLoadingCallBack;
-import com.trevore.anotherfromrodrigo.rx.RxNetHandler;
-import com.trevore.anotherfromrodrigo.rx.RxNetListener;
-import com.trevore.anotherfromrodrigo.rx.RxNetRequest;
-import com.trevore.anotherfromrodrigo.rx.SubscriptionPool;
-import com.trevore.simplerxjavaandretrofit.R;
+import com.trevore.rodrigo.rx.RxLoadingCallBack;
+import com.trevore.rodrigo.rx.RxNetHandler;
+import com.trevore.rodrigo.rx.RxNetListener;
+import com.trevore.rodrigo.rx.RxNetRequest;
+import com.trevore.rodrigo.rx.SubscriptionPool;
+import com.trevore.trevor.R;
 import com.trevore.common.User;
 import com.trevore.common.UserListService;
 import com.trevore.common.UsersListAdapter;

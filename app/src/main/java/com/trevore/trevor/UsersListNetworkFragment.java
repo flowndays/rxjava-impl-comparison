@@ -1,4 +1,4 @@
-package com.trevore.simplerxjavaandretrofit;
+package com.trevore.trevor;
 
 import com.trevore.common.User;
 import com.trevore.common.UserListService;

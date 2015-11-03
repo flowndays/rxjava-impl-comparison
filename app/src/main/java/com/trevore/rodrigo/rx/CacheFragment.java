@@ -1,4 +1,4 @@
-package com.trevore.anotherfromrodrigo.rx;
+package com.trevore.rodrigo.rx;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;

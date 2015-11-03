@@ -1,4 +1,4 @@
-package com.trevore.anotherfromrodrigo.rx;
+package com.trevore.rodrigo.rx;
 
 import android.app.Activity;
 import android.os.Looper;

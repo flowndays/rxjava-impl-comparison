@@ -1,4 +1,4 @@
-package com.trevore.simplerxjavaandretrofit;
+package com.trevore.trevor;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;

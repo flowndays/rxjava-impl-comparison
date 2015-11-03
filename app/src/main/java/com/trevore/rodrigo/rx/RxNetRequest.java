@@ -1,4 +1,4 @@
-package com.trevore.anotherfromrodrigo.rx;
+package com.trevore.rodrigo.rx;
 
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;

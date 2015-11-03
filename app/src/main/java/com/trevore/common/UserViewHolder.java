@@ -4,7 +4,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
-import com.trevore.simplerxjavaandretrofit.R;
+import com.trevore.trevor.R;
 
 /**
  * Created by trevor on 10/8/15.
