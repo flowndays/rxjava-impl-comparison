@@ -32,7 +32,7 @@ public class CachedObservableProvider<T> {
         String cacheKey = cacheProvider.createCacheKey();
         Observable<T> observable;
         CacheFragment cacheFragment;
-        cacheFragment = getCacheFragment(mFragmentManager);
+        cacheFragment = getCacheFragment();
 
         observable = cacheFragment.getObservable(cacheKey);
         if (observable == null) {
@@ -48,16 +48,27 @@ public class CachedObservableProvider<T> {
         return observable;
     }
 
-    private CacheFragment getCacheFragment(FragmentManager fragmentManager) {
-        Fragment fragment = fragmentManager.findFragmentByTag(TAG);
+    private CacheFragment getCacheFragment() {
+        Fragment fragment = mFragmentManager.findFragmentByTag(TAG);
         CacheFragment cacheFragment;
         if (fragment == null) {
             cacheFragment = new CacheFragment();
-            fragmentManager.beginTransaction().add(cacheFragment, TAG).commit();
+            mFragmentManager.beginTransaction().add(cacheFragment, TAG).commit();
         } else {
             cacheFragment = (CacheFragment) fragment;
         }
         cacheFragment.setCacheLifeTime(SEARCH_TIMEOUT);
         return cacheFragment;
     }
+
+    public void clearAllCache() {
+        CacheFragment cacheFragment = getCacheFragment();
+        cacheFragment.clearCache();
+    }
+
+    public void clearCache(String key) {
+        CacheFragment cacheFragment = getCacheFragment();
+        cacheFragment.clearCache(key);
+    }
+
 }
