@@ -1,25 +1,23 @@
 package com.trevore.rodrigo.usage;
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.facebook.stetho.okhttp.StethoInterceptor;
 import com.squareup.okhttp.OkHttpClient;
-import com.trevore.rodrigo.rx.RxLoadingCallBack;
-import com.trevore.rodrigo.rx.RxNetHandler;
-import com.trevore.rodrigo.rx.RxNetListener;
-import com.trevore.rodrigo.rx.RxNetRequest;
-import com.trevore.rodrigo.rx.SubscriptionPool;
-import com.trevore.trevor.R;
 import com.trevore.common.User;
 import com.trevore.common.UserListService;
 import com.trevore.common.UsersListAdapter;
+import com.trevore.rodrigo.rx.CachedObservableProvider;
+import com.trevore.rodrigo.rx.RxCacheProvider;
+import com.trevore.trevor.R;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -28,10 +26,11 @@ import retrofit.GsonConverterFactory;
 import retrofit.Retrofit;
 import retrofit.RxJavaCallAdapterFactory;
 import rx.Observable;
+import rx.Observer;
 import rx.Subscription;
 import rx.subscriptions.CompositeSubscription;
 
-public class UsersListActivity extends AppCompatActivity implements SubscriptionPool {
+public class UsersListActivity extends AppCompatActivity {
 
     public static final String URL = "http://jsonplaceholder.typicode.com";
     private RecyclerView list;
@@ -61,51 +60,65 @@ public class UsersListActivity extends AppCompatActivity implements Subscription
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        RxNetHandler<List<User>> rxNetHandler = RxNetHandler.newCachableInstance(this, getSupportFragmentManager());
-        rxNetHandler.setLoading(new RxLoadingCallBack() {
+        Observable<List<User>> observable = createObservable();//cached Observable
+//        Observable<List<User>> observable = getOriginalObservable();//not cached Observable
+        subscriptions.add(getSubscription(observable));
+        progressBarContainer.setVisibility(View.VISIBLE);
+    }
+
+    private Observable<List<User>> createObservable() {
+        return new CachedObservableProvider<List<User>>(getSupportFragmentManager()).getObservable(new RxCacheProvider<List<User>>() {
+            @NonNull
             @Override
-            public void onStart() {
-                progressBarContainer.setVisibility(View.VISIBLE);
+            public String createCacheKey() {
+                return URL;
             }
 
             @Override
-            public void onFinish() {
-                progressBarContainer.setVisibility(View.GONE);
+            public Observable<List<User>> createOriginalObservable() {
+                return getOriginalObservable();
+            }
+
+            @Override
+            public Observable<List<User>> transformCache(Observable<List<User>> observable) {
+                Log.d("debug", "cache hit for " + createCacheKey());
+                return super.transformCache(observable);
             }
         });
-        rxNetHandler.setListener(new RxNetListener<List<User>>() {
+    }
+
+    @NonNull
+    private Observable<List<User>> getOriginalObservable() {
+        OkHttpClient client = new OkHttpClient();
+        client.networkInterceptors().add(new StethoInterceptor());
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+
+        UserListService service = retrofit.create(UserListService.class);
+        return service.listUsers().delay(3, TimeUnit.SECONDS);
+    }
+
+    private Subscription getSubscription(Observable<List<User>> observable) {
+        return observable.subscribe(new Observer<List<User>>() {
             @Override
-            public void onResult(List<User> response) {
-                list.setVisibility(View.VISIBLE);
-                adapter.setUsers(response);
+            public void onCompleted() {
+                progressBarContainer.setVisibility(View.GONE);
             }
 
             @Override
             public void onError(Throwable error) {
                 onLoadError(error);
             }
-        });
-        rxNetHandler.start(this, new RxNetRequest<List<User>>() {
+
             @Override
-            public Observable<List<User>> execute() {
-                OkHttpClient client = new OkHttpClient();
-                client.networkInterceptors().add(new StethoInterceptor());
-
-                Retrofit retrofit = new Retrofit.Builder()
-                        .baseUrl(URL)
-                        .client(client)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                        .build();
-
-                UserListService service = retrofit.create(UserListService.class);
-                return service.listUsers().delay(3, TimeUnit.SECONDS);
-            }
-
-            @Nullable
-            @Override
-            public String getCacheKey() {
-                return URL;
+            public void onNext(List<User> response) {
+                list.setVisibility(View.VISIBLE);
+                adapter.setUsers(response);
             }
         });
     }
@@ -117,11 +130,6 @@ public class UsersListActivity extends AppCompatActivity implements Subscription
         if (!subscriptions.isUnsubscribed()) {
             subscriptions.unsubscribe();
         }
-    }
-
-    @Override
-    public void addSubscription(Subscription subscription) {
-        subscriptions.add(subscription);
     }
 
     private void onLoadError(Throwable e) {
