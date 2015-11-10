@@ -3,6 +3,7 @@ package com.trevore.joni.rx;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AppCompatActivity;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,13 +18,22 @@ import rx.schedulers.Schedulers;
  * Created by rtang on 15/10/15.
  */
 public class RetainedObservableFactory<T> {
+
     public static final String TAG = "com.kayak.android.common.net.RetainedObservableFactory";
-    private static final long SEARCH_TIMEOUT = TimeUnit.MINUTES.toMillis(20);
+    public static final long SEARCH_TIMEOUT = TimeUnit.MINUTES.toMillis(20);
 
-    private final FragmentManager mFragmentManager;
+    private final FragmentManager fragmentManager;
 
-    public RetainedObservableFactory(@NonNull FragmentManager fragmentManager) {
-        mFragmentManager = fragmentManager;
+    public RetainedObservableFactory(@NonNull AppCompatActivity activity) {
+        fragmentManager = activity.getSupportFragmentManager();
+    }
+
+    public RetainedObservableFactory(@NonNull Fragment fragment) {
+        fragmentManager = fragment.getFragmentManager();
+    }
+
+    public Observable<T> getRetainedObservable(Object cacheKey, Observable<T> observableFactory) {
+        return getRetainedObservable(cacheKey, observableFactory, null);
     }
 
     /**
@@ -33,35 +43,31 @@ public class RetainedObservableFactory<T> {
      * You can transform the original Observable, e.g: filter.
      *
      */
-    public Observable<T> getRetainedObservable(Object cacheKey, Func0<Observable<T>> observableFactory, Func1<Observable<T>, Observable<T>> cacheReadTransform) {
+    public Observable<T> getRetainedObservable(Object cacheKey, Observable<T> observableFactory, Func1<Observable<T>, Observable<T>> cacheReadTransform) {
         Observable<T> observable;
         CacheFragment<Observable<T>> cacheFragment;
         cacheFragment = getCacheFragment();
 
         observable = cacheFragment.get(cacheKey);
         if (observable == null) {
-            observable = observableFactory.call();
+            observable = observableFactory;
             observable = observable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
 
             observable = observable.cache();
             cacheFragment.put(cacheKey, observable);
         } else {
-            observable = cacheReadTransform==null? observable: cacheReadTransform.call(observable);
+            observable = cacheReadTransform == null ? observable : cacheReadTransform.call(observable);
         }
 
         return observable;
     }
 
-    public Observable<T> getRetainedObservable(Object cacheKey, Func0<Observable<T>> observableFactory) {
-        return getRetainedObservable(cacheKey, observableFactory, null);
-    }
-
     private CacheFragment<Observable<T>> getCacheFragment() {
-        Fragment fragment = mFragmentManager.findFragmentByTag(TAG);
+        Fragment fragment = fragmentManager.findFragmentByTag(TAG);
         CacheFragment cacheFragment;
         if (fragment == null) {
             cacheFragment = new CacheFragment();
-            mFragmentManager.beginTransaction().add(cacheFragment, TAG).commit();
+            fragmentManager.beginTransaction().add(cacheFragment, TAG).commit();
         } else {
             cacheFragment = (CacheFragment) fragment;
         }

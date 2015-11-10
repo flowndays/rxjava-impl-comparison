@@ -29,7 +29,7 @@ public class UsersListActivity extends AppCompatActivity {
     private TextView errorText;
 
     private UsersListAdapter adapter;
-
+    private UserListNetworkConsumer userListNetworkConsumer;
     private CompositeSubscription subscriptions = new CompositeSubscription();
 
     @Override
@@ -50,38 +50,21 @@ public class UsersListActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Observable<List<User>> observable = createObservable();//cached Observable
-//        Observable<List<User>> observable = UserListNetwork.createGetUserListObservable();//not cached Observable
-        subscriptions.add(getSubscription(observable));
-        progressBarContainer.setVisibility(View.VISIBLE);
+        userListNetworkConsumer = new UserListNetworkConsumer();
+
+        Observable<List<User>> observable = createUserListObservable();
+        Subscription userListSubscription = observable.subscribe(new UserListObserver());
+        subscriptions.add(userListSubscription);
     }
 
-    private Observable<List<User>> createObservable() {
-        return new RetainedObservableFactory<List<User>>(getSupportFragmentManager())
-                .getRetainedObservable(UserListNetwork.URL_GET_USER, UserListNetwork::createGetUserListObservable, observable -> {
-                    Log.d("debug", "cache hit for " + UserListNetwork.URL_GET_USER);
-                    return observable;
-                });
-    }
-
-    private Subscription getSubscription(Observable<List<User>> observable) {
-        return observable.subscribe(new Observer<List<User>>() {
-            @Override
-            public void onCompleted() {
-                progressBarContainer.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onError(Throwable error) {
-                onLoadError(error);
-            }
-
-            @Override
-            public void onNext(List<User> response) {
-                list.setVisibility(View.VISIBLE);
-                adapter.setUsers(response);
-            }
-        });
+    private Observable<List<User>> createUserListObservable() {
+        return new RetainedObservableFactory<List<User>>(this)
+                .getRetainedObservable(UserListNetworkConsumer.KEY_USER_LIST,
+                        userListNetworkConsumer.createGetUserListObservable(),
+                        observable -> {
+                            Log.d("debug", "cache hit for " + UserListNetworkConsumer.KEY_USER_LIST);
+                            return observable;
+                        });
     }
 
     @Override
@@ -93,11 +76,25 @@ public class UsersListActivity extends AppCompatActivity {
         }
     }
 
-    private void onLoadError(Throwable e) {
-        list.setVisibility(View.GONE);
-        progressBarContainer.setVisibility(View.GONE);
-        errorTextContainer.setVisibility(View.VISIBLE);
+    private class UserListObserver implements Observer<List<User>> {
+        @Override
+        public void onCompleted() {
+            progressBarContainer.setVisibility(View.GONE);
+        }
 
-        errorText.setText("An error occurred: " + e.getMessage());
+        @Override
+        public void onError(Throwable error) {
+            list.setVisibility(View.GONE);
+            progressBarContainer.setVisibility(View.GONE);
+            errorTextContainer.setVisibility(View.VISIBLE);
+
+            errorText.setText("An error occurred: " + error.getMessage());
+        }
+
+        @Override
+        public void onNext(List<User> response) {
+            list.setVisibility(View.VISIBLE);
+            adapter.setUsers(response);
+        }
     }
 }
