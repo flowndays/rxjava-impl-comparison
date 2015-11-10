@@ -61,7 +61,7 @@ public class UsersListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Observable<List<User>> observable = createObservable();//cached Observable
-//        Observable<List<User>> observable = getOriginalObservable();//not cached Observable
+//        Observable<List<User>> observable = createGetUserListObservable();//not cached Observable
         subscriptions.add(getSubscription(observable));
         progressBarContainer.setVisibility(View.VISIBLE);
     }

@@ -1,7 +1,6 @@
 package com.trevore.joni.usage;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -10,20 +9,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.facebook.stetho.okhttp.StethoInterceptor;
-import com.squareup.okhttp.OkHttpClient;
 import com.trevore.common.User;
-import com.trevore.common.UserListService;
 import com.trevore.common.UsersListAdapter;
 import com.trevore.joni.rx.RetainedObservableFactory;
 import com.trevore.trevor.R;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import retrofit.GsonConverterFactory;
-import retrofit.Retrofit;
-import retrofit.RxJavaCallAdapterFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
@@ -31,7 +23,6 @@ import rx.subscriptions.CompositeSubscription;
 
 public class UsersListActivity extends AppCompatActivity {
 
-    public static final String URL = "http://jsonplaceholder.typicode.com";
     private RecyclerView list;
     private View progressBarContainer;
     private View errorTextContainer;
@@ -60,34 +51,17 @@ public class UsersListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Observable<List<User>> observable = createObservable();//cached Observable
-//        Observable<List<User>> observable = getOriginalObservable();//not cached Observable
+//        Observable<List<User>> observable = UserListNetwork.createGetUserListObservable();//not cached Observable
         subscriptions.add(getSubscription(observable));
         progressBarContainer.setVisibility(View.VISIBLE);
     }
 
     private Observable<List<User>> createObservable() {
-        String cacheKey = URL;
         return new RetainedObservableFactory<List<User>>(getSupportFragmentManager())
-                .getRetainedObservable(cacheKey, this::getOriginalObservable, observable -> {
-                    Log.d("debug", "cache hit for " + cacheKey);
+                .getRetainedObservable(UserListNetwork.URL_GET_USER, UserListNetwork::createGetUserListObservable, observable -> {
+                    Log.d("debug", "cache hit for " + UserListNetwork.URL_GET_USER);
                     return observable;
                 });
-    }
-
-    @NonNull
-    private Observable<List<User>> getOriginalObservable() {
-        OkHttpClient client = new OkHttpClient();
-        client.networkInterceptors().add(new StethoInterceptor());
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(URL)
-                .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
-
-        UserListService service = retrofit.create(UserListService.class);
-        return service.listUsers().delay(3, TimeUnit.SECONDS);
     }
 
     private Subscription getSubscription(Observable<List<User>> observable) {
