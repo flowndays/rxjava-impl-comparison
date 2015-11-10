@@ -11,27 +11,18 @@ public class CacheFragment<T> extends Fragment {
     public static final String TAG = "com.kayak.android.CacheFragment.TAG";
 
     private HashMap<Object, CacheWrapper<T>> cache = new HashMap<>();
-
     private long cacheLifeTime = Long.MAX_VALUE;
-
-    public void setCacheLifeTime(long cacheLifeTime) {
-        this.cacheLifeTime = cacheLifeTime;
-    }
-
-    private static class CacheWrapper<T> {
-        final long startTime;
-        final T value;
-
-        public CacheWrapper(long startTime, T value) {
-            this.value = value;
-            this.startTime = startTime;
-        }
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+    }
+
+    @Override
+    public void onDestroy() {
+        clearCache();
+        super.onDestroy();
     }
 
     public T get(@Nullable Object key) {
@@ -52,10 +43,8 @@ public class CacheFragment<T> extends Fragment {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        clearCache();
-        super.onDestroy();
+    public void setCacheLifeTime(long cacheLifeTime) {
+        this.cacheLifeTime = cacheLifeTime;
     }
 
     public void clearCache() {
@@ -64,5 +53,15 @@ public class CacheFragment<T> extends Fragment {
 
     public void clearCache(Object key) {
         cache.remove(key);
+    }
+
+    private static class CacheWrapper<T> {
+        final long startTime;
+        final T value;
+
+        public CacheWrapper(long startTime, T value) {
+            this.value = value;
+            this.startTime = startTime;
+        }
     }
 }
